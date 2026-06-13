@@ -28,8 +28,10 @@ test.describe('Browse Page', () => {
 
   test('typing in the search box updates the URL query param', async ({ page }) => {
     const input = page.getByRole('searchbox');
+    await input.waitFor({ state: 'visible' });
+    await input.click();
     await input.pressSequentially('Inception');
-    await page.keyboard.press('Enter');
+    await input.press('Enter');
     await expect(page).toHaveURL(/q=Inception/i, { timeout: 10000 });
   });
 

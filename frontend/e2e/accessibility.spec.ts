@@ -27,9 +27,10 @@ test.describe('Accessibility — Keyboard Navigation', () => {
   test('can submit search with Enter key', async ({ page }) => {
     await page.goto('/browse');
     const input = page.getByRole('searchbox');
-    await input.focus();
+    await input.waitFor({ state: 'visible' });
+    await input.click();
     await input.pressSequentially('Star Wars');
-    await page.keyboard.press('Enter');
+    await input.press('Enter');
     await expect(page).toHaveURL(/q=Star/i, { timeout: 10000 });
   });
 });
