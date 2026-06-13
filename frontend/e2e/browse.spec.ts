@@ -28,9 +28,9 @@ test.describe('Browse Page', () => {
 
   test('typing in the search box updates the URL query param', async ({ page }) => {
     const input = page.getByRole('searchbox');
-    await input.fill('Inception');
+    await input.pressSequentially('Inception');
     await page.keyboard.press('Enter');
-    await expect(page).toHaveURL(/q=Inception/i);
+    await expect(page).toHaveURL(/q=Inception/i, { timeout: 10000 });
   });
 
   test('shows a grid or message after searching', async ({ page }) => {

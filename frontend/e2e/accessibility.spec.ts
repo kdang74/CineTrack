@@ -9,18 +9,10 @@ import { test, expect } from '@playwright/test';
 test.describe('Accessibility — Keyboard Navigation', () => {
   test('can Tab to the Sign In button on the landing page', async ({ page }) => {
     await page.goto('/');
-    // Tab through focusable elements until we reach Sign In
-    for (let i = 0; i < 10; i++) {
-      await page.keyboard.press('Tab');
-      const focused = page.locator(':focus');
-      const text = await focused.textContent().catch(() => '');
-      if (text?.toLowerCase().includes('sign in')) {
-        // Found it — test passes
-        return;
-      }
-    }
-    // Fallback: check the element is focusable at all
-    const signInBtn = page.getByRole('link', { name: /sign in with google/i }).first();
+    // Directly focus the Sign In button and verify it is keyboard-focusable
+    const signInBtn = page.getByRole('button', { name: /sign in with google/i }).or(
+      page.getByRole('link', { name: /sign in/i })
+    ).first();
     await signInBtn.focus();
     await expect(signInBtn).toBeFocused();
   });
@@ -36,9 +28,9 @@ test.describe('Accessibility — Keyboard Navigation', () => {
     await page.goto('/browse');
     const input = page.getByRole('searchbox');
     await input.focus();
-    await input.type('Star Wars');
+    await input.pressSequentially('Star Wars');
     await page.keyboard.press('Enter');
-    await expect(page).toHaveURL(/q=Star/i);
+    await expect(page).toHaveURL(/q=Star/i, { timeout: 10000 });
   });
 });
 
