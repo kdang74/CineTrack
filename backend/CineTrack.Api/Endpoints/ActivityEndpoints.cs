@@ -17,7 +17,6 @@ public static class ActivityEndpoints
             var events = await db.ActivityEvents
                 .Include(a => a.User)
                 .Include(a => a.Movie)
-                .Where(a => !a.User.IsSimulated || db.ActivityEvents.Count(x => !x.User.IsSimulated) < 5)
                 .OrderByDescending(a => a.OccurredAt)
                 .Take(lim)
                 .Select(a => new ActivityEventDto(
