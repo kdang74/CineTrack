@@ -16,7 +16,7 @@ export default function MovieDetailPage() {
   const [watchlistItem, setWatchlistItem] = useState<WatchlistItem | undefined>()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
-  usePageTitle(movie?.title ?? movie?.name ?? 'Title')
+  usePageTitle(movie?.title ?? 'Title')
 
   useEffect(() => {
     if (!tmdbId || !mediaType) return
