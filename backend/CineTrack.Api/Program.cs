@@ -5,10 +5,21 @@ using CineTrack.Api.Middleware;
 using CineTrack.Api.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Trust Render's (and other reverse proxies') X-Forwarded-Proto header so
+// ASP.NET Core sees the request as HTTPS and generates correct redirect URIs for Google OAuth.
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    // Allow any proxy — Render's IP range is not fixed
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 
 // Database — PostgreSQL in production, SQLite in development
 var postgresConn = builder.Configuration.GetConnectionString("Postgres");
@@ -97,6 +108,9 @@ using (var scope = app.Services.CreateScope())
     await db.Database.EnsureCreatedAsync();
 }
 
+// Must be first — makes ASP.NET Core aware it's behind Render's HTTPS proxy
+app.UseForwardedHeaders();
+
 app.UseMiddleware<ErrorHandlingMiddleware>();
 app.UseMiddleware<ApiAuthMiddleware>();
 
@@ -106,7 +120,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+// Skip HTTPS redirection in production — Render's load balancer handles SSL termination
+if (!app.Environment.IsProduction())
+    app.UseHttpsRedirection();
+
 app.UseCors("Frontend");
 app.UseAuthentication();
 app.UseAuthorization();
