@@ -24,7 +24,7 @@ const mockTvShow: Movie = {
   mediaType: 'tv',
   title: 'Breaking Bad',
   overview: 'A chemistry teacher becomes a drug lord.',
-  posterPath: null,
+  posterPath: undefined,
   releaseDate: '2008-01-20',
   tmdbRating: 9.5,
   tmdbVoteCount: 12000,
