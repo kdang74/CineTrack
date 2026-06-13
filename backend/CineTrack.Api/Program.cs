@@ -21,7 +21,8 @@ if (!string.IsNullOrEmpty(postgresConn) &&
 {
     var uri = new Uri(postgresConn);
     var userInfo = uri.UserInfo.Split(':');
-    postgresConn = $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.TrimStart('/')};" +
+    var port = uri.Port > 0 ? uri.Port : 5432;
+    postgresConn = $"Host={uri.Host};Port={port};Database={uri.AbsolutePath.TrimStart('/')};" +
                   $"Username={userInfo[0]};Password={userInfo[1]};" +
                   $"SSL Mode=Require;Trust Server Certificate=true";
 }
