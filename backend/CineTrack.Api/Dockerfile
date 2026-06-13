@@ -4,7 +4,6 @@ WORKDIR /src
 
 # Restore dependencies first (cached layer if .csproj hasn't changed)
 COPY CineTrack.Api/CineTrack.Api.csproj CineTrack.Api/
-COPY CineTrack.Tests/CineTrack.Tests.csproj CineTrack.Tests/
 RUN dotnet restore CineTrack.Api/CineTrack.Api.csproj
 
 # Copy everything and publish
