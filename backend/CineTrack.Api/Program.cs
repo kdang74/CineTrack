@@ -11,6 +11,10 @@ using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Tell Npgsql to treat DateTime values without explicit UTC Kind as UTC.
+// This avoids "Cannot write DateTime with Kind=Unspecified" errors on PostgreSQL.
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
 // Trust Render's (and other reverse proxies') X-Forwarded-Proto header so
 // ASP.NET Core sees the request as HTTPS and generates correct redirect URIs for Google OAuth.
 builder.Services.Configure<ForwardedHeadersOptions>(options =>

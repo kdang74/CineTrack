@@ -271,7 +271,10 @@ public static class DatabaseSeeder
         BackdropPath = r.BackdropPath,
         TmdbRating = r.VoteAverage,
         TmdbVoteCount = r.VoteCount,
-        ReleaseDate = DateTime.TryParse(r.ReleaseDate, out var dt) ? dt : null,
+        // PostgreSQL requires DateTimeKind.Utc — SpecifyKind converts Unspecified dates from TMDB
+        ReleaseDate = DateTime.TryParse(r.ReleaseDate, out var dt)
+            ? DateTime.SpecifyKind(dt, DateTimeKind.Utc)
+            : null,
         GenreIds = r.GenreIds is not null ? JsonSerializer.Serialize(r.GenreIds) : null,
     };
 
