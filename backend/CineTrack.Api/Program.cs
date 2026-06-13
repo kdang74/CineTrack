@@ -15,6 +15,17 @@ var postgresConn = builder.Configuration.GetConnectionString("Postgres");
 var sqliteConn   = builder.Configuration.GetConnectionString("Sqlite") ?? "Data Source=cinetrack.db";
 var isProduction = builder.Environment.IsProduction();
 
+// Render supplies the connection string as a postgres:// URI — convert to ADO.NET format
+if (!string.IsNullOrEmpty(postgresConn) &&
+    (postgresConn.StartsWith("postgres://") || postgresConn.StartsWith("postgresql://")))
+{
+    var uri = new Uri(postgresConn);
+    var userInfo = uri.UserInfo.Split(':');
+    postgresConn = $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.TrimStart('/')};" +
+                  $"Username={userInfo[0]};Password={userInfo[1]};" +
+                  $"SSL Mode=Require;Trust Server Certificate=true";
+}
+
 if (isProduction && !string.IsNullOrEmpty(postgresConn))
     builder.Services.AddDbContext<AppDbContext>(opt => opt.UseNpgsql(postgresConn));
 else
@@ -78,14 +89,11 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// Run EF migrations (production) or EnsureCreated (SQLite dev)
+// Create the database schema if it doesn't exist yet
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    if (isProduction)
-        await db.Database.MigrateAsync();
-    else
-        await db.Database.EnsureCreatedAsync();
+    await db.Database.EnsureCreatedAsync();
 }
 
 app.UseMiddleware<ErrorHandlingMiddleware>();
