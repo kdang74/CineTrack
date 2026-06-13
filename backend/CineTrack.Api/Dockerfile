@@ -3,12 +3,13 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
 # Restore dependencies first (cached layer if .csproj hasn't changed)
-COPY CineTrack.Api/CineTrack.Api.csproj CineTrack.Api/
-RUN dotnet restore CineTrack.Api/CineTrack.Api.csproj
+# Paths are relative to the repo root (Docker context = repo root)
+COPY backend/CineTrack.Api/CineTrack.Api.csproj backend/CineTrack.Api/
+RUN dotnet restore backend/CineTrack.Api/CineTrack.Api.csproj
 
-# Copy everything and publish
-COPY . .
-WORKDIR /src/CineTrack.Api
+# Copy the backend source and publish
+COPY backend/CineTrack.Api/ backend/CineTrack.Api/
+WORKDIR /src/backend/CineTrack.Api
 RUN dotnet publish -c Release -o /app/publish --no-restore
 
 # ── Runtime stage ──────────────────────────────────────────────────────────────
