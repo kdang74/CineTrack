@@ -1,0 +1,122 @@
+using CineTrack.Api.Data;
+using CineTrack.Api.Endpoints;
+using CineTrack.Api.Hubs;
+using CineTrack.Api.Middleware;
+using CineTrack.Api.Services;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Database — PostgreSQL in production, SQLite in development
+var postgresConn = builder.Configuration.GetConnectionString("Postgres");
+var sqliteConn   = builder.Configuration.GetConnectionString("Sqlite") ?? "Data Source=cinetrack.db";
+var isProduction = builder.Environment.IsProduction();
+
+if (isProduction && !string.IsNullOrEmpty(postgresConn))
+    builder.Services.AddDbContext<AppDbContext>(opt => opt.UseNpgsql(postgresConn));
+else
+    builder.Services.AddDbContext<AppDbContext>(opt => opt.UseSqlite(sqliteConn));
+
+// Authentication
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = GoogleDefaults.AuthenticationScheme;
+})
+.AddCookie(options =>
+{
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SameSite = isProduction ? SameSiteMode.None : SameSiteMode.Lax;
+    options.Cookie.SecurePolicy = isProduction ? CookieSecurePolicy.Always : CookieSecurePolicy.SameAsRequest;
+    options.ExpireTimeSpan = TimeSpan.FromDays(7);
+    // Api auth middleware handles 302→401 conversion for API routes
+})
+.AddGoogle(options =>
+{
+    options.ClientId = builder.Configuration["Google:ClientId"] ?? throw new InvalidOperationException("Google:ClientId is required");
+    options.ClientSecret = builder.Configuration["Google:ClientSecret"] ?? throw new InvalidOperationException("Google:ClientSecret is required");
+    options.CallbackPath = "/signin-google";
+    options.SaveTokens = true;
+    // Google returns the picture claim in the id_token as "picture"
+    // We access it via the standard ClaimTypes in the callback
+});
+
+builder.Services.AddAuthorization();
+
+// CORS
+var frontendUrl = builder.Configuration["Frontend:BaseUrl"] ?? "http://localhost:5173";
+builder.Services.AddCors(opt => opt.AddPolicy("Frontend", policy =>
+    policy.WithOrigins(frontendUrl)
+          .AllowAnyHeader()
+          .AllowAnyMethod()
+          .AllowCredentials()));
+
+// SignalR
+builder.Services.AddSignalR();
+
+// HTTP client for TMDB
+// TMDB v3 API Key is sent as ?api_key= query param (not Bearer — that is for v4 Read Access Token)
+var tmdbApiKey = builder.Configuration["Tmdb:ApiKey"] ?? throw new InvalidOperationException("Tmdb:ApiKey is required");
+builder.Services.AddHttpClient<TmdbService>(client =>
+{
+    client.BaseAddress = new Uri($"https://api.themoviedb.org/3/");
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+});
+builder.Services.AddSingleton<TmdbApiKey>(_ => new TmdbApiKey(tmdbApiKey));
+
+builder.Services.AddScoped<WatchlistService>();
+
+// Swagger
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new() { Title = "CineTrack API", Version = "v1", Description = "Movie & TV Watchlist API" });
+});
+
+var app = builder.Build();
+
+// Run EF migrations (production) or EnsureCreated (SQLite dev)
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    if (isProduction)
+        await db.Database.MigrateAsync();
+    else
+        await db.Database.EnsureCreatedAsync();
+}
+
+app.UseMiddleware<ErrorHandlingMiddleware>();
+app.UseMiddleware<ApiAuthMiddleware>();
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+app.UseHttpsRedirection();
+app.UseCors("Frontend");
+app.UseAuthentication();
+app.UseAuthorization();
+
+// Health check endpoint (used by Render to verify the service is running)
+app.MapGet("/healthz", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }))
+   .ExcludeFromDescription();
+
+// Map endpoints
+app.MapAuthEndpoints();
+app.MapMovieEndpoints();
+app.MapWatchlistEndpoints();
+app.MapActivityEndpoints();
+app.MapAdminEndpoints();
+
+// SignalR hub
+app.MapHub<ActivityHub>("/hubs/activity");
+
+app.Run();
+
+// Make Program accessible for integration tests
+public partial class Program { }

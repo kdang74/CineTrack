@@ -1,0 +1,6 @@
+@CineTrack.Api_HostAddress = http://localhost:5172
+
+GET {{CineTrack.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

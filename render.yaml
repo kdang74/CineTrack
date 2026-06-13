@@ -1,0 +1,33 @@
+services:
+  # ── ASP.NET Core backend ──────────────────────────────────────────────────
+  - type: web
+    name: cinetrack-api
+    runtime: docker
+    dockerfilePath: ./backend/CineTrack.Api/Dockerfile
+    dockerContext: ./backend
+    plan: starter
+    healthCheckPath: /healthz
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ConnectionStrings__Postgres
+        fromDatabase:
+          name: cinetrack-db
+          property: connectionString
+      - key: Google__ClientId
+        sync: false          # Set manually in Render dashboard
+      - key: Google__ClientSecret
+        sync: false          # Set manually in Render dashboard
+      - key: Tmdb__ApiKey
+        sync: false          # Set manually in Render dashboard
+      - key: Admin__SeedKey
+        generateValue: true  # Render auto-generates a secure random string
+      - key: Frontend__BaseUrl
+        value: https://cinetrack.vercel.app   # Update to your Vercel URL
+
+  # ── PostgreSQL database ───────────────────────────────────────────────────
+databases:
+  - name: cinetrack-db
+    plan: starter
+    databaseName: cinetrack
+    user: cinetrack_user

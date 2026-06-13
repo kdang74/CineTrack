@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="CineTrack.Api/CineTrack.Api.csproj" />
+  <Project Path="CineTrack.Tests/CineTrack.Tests.csproj" />
+</Solution>

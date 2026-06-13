@@ -1,5 +1,133 @@
 [![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/N0Az2RiV)
 [![Open in Codespaces](https://classroom.github.com/assets/launch-codespace-2972f46106e565e64193e422d61a12cf1da4916b45550586e14ef0a7c637dd04.svg)](https://classroom.github.com/open-in-codespaces?assignment_repo_id=23894019)
+[![CI](https://github.com/CSC-360/final-project-kdang74/actions/workflows/ci.yml/badge.svg)](https://github.com/CSC-360/final-project-kdang74/actions/workflows/ci.yml)
+
+# CineTrack — Movie & TV Watchlist
+
+A full-stack Movie & TV Watchlist web application built for CSC 360. Users can search for movies and shows via the TMDB API, save titles to a personal watchlist, track watched items, write notes, and rate titles 1–10. A real-time activity feed (powered by SignalR) shows what the community is watching right now.
+
+**Deployed URLs:**
+- Frontend: *(to be added after Vercel deploy)*
+- Backend API: *(to be added after Render deploy)*
+
+**Tech stack:** React + Vite + TypeScript + Tailwind CSS · .NET 10 ASP.NET Core Minimal APIs · Entity Framework Core · SQLite (dev) / PostgreSQL (prod) · Google OAuth 2.0 · SignalR
+
+---
+
+## Local Setup
+
+### Prerequisites
+
+- Node.js 22+
+- .NET 10 SDK
+- A Google OAuth 2.0 Client ID and Secret ([setup guide in PRODUCT_BRIEF.md](PRODUCT_BRIEF.md))
+- A TMDB API key (free at [themoviedb.org/settings/api](https://www.themoviedb.org/settings/api))
+
+### Backend Setup
+
+```bash
+cd backend/CineTrack.Api
+
+# Store secrets (never commit these)
+dotnet user-secrets set "Google:ClientId" "YOUR_GOOGLE_CLIENT_ID"
+dotnet user-secrets set "Google:ClientSecret" "YOUR_GOOGLE_CLIENT_SECRET"
+dotnet user-secrets set "Tmdb:ApiKey" "YOUR_TMDB_API_KEY"
+dotnet user-secrets set "AdminKey" "any-local-secret"
+
+# Run the API (SQLite database created automatically)
+dotnet run
+```
+
+The API will be available at `http://localhost:5000`. Swagger docs are at `http://localhost:5000/swagger`.
+
+### Frontend Setup
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+The frontend will be available at `http://localhost:5173`.
+
+### Seed the Database
+
+With both the backend running and your `AdminKey` configured, call the seed endpoint:
+
+```bash
+curl -X POST http://localhost:5000/api/admin/seed \
+  -H "X-Admin-Key: any-local-secret"
+```
+
+This fetches popular titles from TMDB and generates simulated users and interactions. The full seed takes approximately 30–60 seconds depending on TMDB API response time.
+
+### Run Tests
+
+```bash
+# Backend tests (xUnit)
+cd backend
+dotnet test
+
+# Frontend unit tests (Vitest)
+cd frontend
+npm test
+
+# Frontend E2E tests (Playwright — requires dev server running)
+cd frontend
+npm run test:e2e
+```
+
+---
+
+## Required Environment Variables
+
+| Variable | Where | Description |
+|----------|-------|-------------|
+| `Google__ClientId` | Backend | Google OAuth 2.0 Client ID |
+| `Google__ClientSecret` | Backend | Google OAuth 2.0 Client Secret |
+| `Tmdb__ApiKey` | Backend | TMDB API v3 key |
+| `AdminKey` | Backend | Secret header value for `/api/admin/seed` |
+| `ConnectionStrings__DefaultConnection` | Backend (prod) | PostgreSQL connection string |
+| `VITE_API_URL` | Frontend (prod) | Full URL of the deployed backend |
+
+In development, backend secrets are stored via `dotnet user-secrets`. In production (Render), they are set as environment variables in the Render dashboard.
+
+---
+
+## Demo Account
+
+Since CineTrack uses Google OAuth, any Google account can sign in. No special demo account is required. The evaluator can sign in with their own Google account.
+
+To test with a second account for user isolation, open a second private/incognito browser window and sign in with a different Google account.
+
+---
+
+## Database Migration & Reset
+
+```bash
+# Apply EF Core migrations (development — SQLite)
+cd backend/CineTrack.Api
+dotnet ef database update
+
+# Add a new migration after model changes
+dotnet ef migrations add MigrationName --project CineTrack.Api
+
+# Reset the local database
+rm cinetrack.db
+dotnet run   # EnsureCreated rebuilds it
+```
+
+---
+
+## Known Limitations
+
+- The database seeder uses TMDB's "popular" endpoint which returns at most ~500 unique titles (limited by TMDB's free-tier pagination). The remainder of the 5,000-record target is backfilled with generated data.
+- Google OAuth requires the redirect URI `http://localhost:5000/signin-google` to be added to the Google Cloud Console for local development.
+- The SignalR live feed requires the frontend and backend to run simultaneously; if the backend is restarted, the browser reconnects automatically within 5 seconds.
+- Playwright E2E tests that cover authenticated flows are marked `test.skip` because they require a live Google session and cannot run in automated CI.
+
+---
+
 # Final Project
 
 ---
