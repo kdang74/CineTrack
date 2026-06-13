@@ -38,7 +38,8 @@ test.describe('Responsive Layout', () => {
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto('/');
     await expect(page.getByRole('navigation')).toBeVisible();
-    await expect(page.getByRole('heading', { name: /CineTrack/i })).toBeVisible();
+    // The hero h1 is "Your movies, your list." — check a heading exists, not the brand name
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   });
 
   test('browse page renders on tablet viewport', async ({ page }) => {

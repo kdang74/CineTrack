@@ -18,15 +18,23 @@ import { test, expect, request } from '@playwright/test';
 
 const API_BASE = 'http://localhost:5000';
 
-// Helper: authenticate the browser context using the dev login endpoint
+// Helper: authenticate the browser context using the dev login endpoint.
+// Returns false (and skips the test) if the backend is unreachable or in production.
 async function loginAsTestUser(page: import('@playwright/test').Page) {
-  // Use the page's request context so cookies are shared with the browser
-  const resp = await page.request.post(`${API_BASE}/api/auth/test-login`, {
-    headers: { 'Content-Type': 'application/json' },
-  });
-  // If the endpoint returns 404 (production) or is unavailable, skip the test
+  let resp: import('@playwright/test').APIResponse;
+  try {
+    resp = await page.request.post(`${API_BASE}/api/auth/test-login`, {
+      headers: { 'Content-Type': 'application/json' },
+      timeout: 5000,
+    });
+  } catch {
+    // Backend not running (CI without backend) — skip gracefully
+    test.skip(true, 'Backend not available — skipping authenticated E2E test');
+    return false;
+  }
   if (resp.status() === 404) {
-    test.skip();
+    // Endpoint only exists in Development; returns 404 in Production
+    test.skip(true, 'test-login endpoint not available (Production) — skipping');
     return false;
   }
   expect(resp.ok()).toBeTruthy();
