@@ -144,8 +144,12 @@ jobs:
         run: npm install -g vercel@latest
 
       - name: Deploy to Vercel
-        if: ${{ secrets.VERCEL_TOKEN != '' }}
-        run: vercel --prod --yes
+        run: |
+          if [ -n "$VERCEL_TOKEN" ]; then
+            vercel --prod --yes
+          else
+            echo "VERCEL_TOKEN not configured — skipping (Vercel deploys via GitHub integration)"
+          fi
         working-directory: frontend
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
