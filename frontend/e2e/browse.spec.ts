@@ -29,6 +29,8 @@ test.describe('Browse Page', () => {
   test('typing in the search box updates the URL query param', async ({ page }) => {
     const input = page.getByRole('searchbox');
     await input.waitFor({ state: 'visible' });
+    // Wait for the initial browse load to finish so the submit button is enabled
+    await expect(page.getByRole('button', { name: 'Search' })).toBeEnabled({ timeout: 15000 });
     await input.click();
     await input.pressSequentially('Inception');
     await input.press('Enter');

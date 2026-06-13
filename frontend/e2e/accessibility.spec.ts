@@ -28,6 +28,8 @@ test.describe('Accessibility — Keyboard Navigation', () => {
     await page.goto('/browse');
     const input = page.getByRole('searchbox');
     await input.waitFor({ state: 'visible' });
+    // Wait for the initial browse load to finish so the submit button is enabled
+    await expect(page.getByRole('button', { name: 'Search' })).toBeEnabled({ timeout: 15000 });
     await input.click();
     await input.pressSequentially('Star Wars');
     await input.press('Enter');
