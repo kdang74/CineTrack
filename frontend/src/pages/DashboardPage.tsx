@@ -5,6 +5,7 @@ import { api, tmdbPoster } from '../lib/api'
 import type { WatchlistItem } from '../types'
 import { List, Eye, Clock, X, Star, ArrowRight, Film } from 'lucide-react'
 import LoadingSpinner from '../components/LoadingSpinner'
+import { usePageTitle } from '../hooks/usePageTitle'
 
 const STATUS_ICONS: Record<string, React.ReactNode> = {
   Watchlist: <List size={14} />,
@@ -21,6 +22,7 @@ const STATUS_COLORS: Record<string, string> = {
 }
 
 export default function DashboardPage() {
+  usePageTitle('Dashboard')
   const { user } = useAuth()
   const [items, setItems] = useState<WatchlistItem[]>([])
   const [loading, setLoading] = useState(true)

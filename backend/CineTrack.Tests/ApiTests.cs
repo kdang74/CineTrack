@@ -116,9 +116,10 @@ public class AdditionalIntegrationTests : IClassFixture<TestWebApplicationFactor
     // ── Additional 401 Tests ────────────────────────────────────────────────
 
     [Fact]
-    public async Task GetAuthMe_Returns401_WhenUnauthenticated()
+    public async Task PostWatchlistItem_Returns401_WhenUnauthenticated()
     {
-        var response = await _client.GetAsync("/api/auth/me");
+        var content = new StringContent("{\"tmdbId\":550,\"mediaType\":\"movie\"}", System.Text.Encoding.UTF8, "application/json");
+        var response = await _client.PostAsync("/api/me/watchlist", content);
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 

@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { api } from '../lib/api'
+import { usePageTitle } from '../hooks/usePageTitle'
 import type { ActivityEvent } from '../types'
 import { getActivityHubConnection } from '../lib/signalr'
 import ActivityFeedItem from '../components/ActivityFeedItem'
@@ -8,6 +9,7 @@ import EmptyState from '../components/EmptyState'
 import { Activity, Radio } from 'lucide-react'
 
 export default function ActivityFeedPage() {
+  usePageTitle('Live Activity Feed')
   const [events, setEvents] = useState<ActivityEvent[]>([])
   const [loading, setLoading] = useState(true)
   const [connected, setConnected] = useState(false)

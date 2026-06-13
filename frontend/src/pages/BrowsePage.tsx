@@ -1,12 +1,14 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { api } from '../lib/api'
+import { usePageTitle } from '../hooks/usePageTitle'
 import type { Movie, SearchResponse, TmdbSearchResult } from '../types'
 import SearchBar from '../components/SearchBar'
 import MovieGrid from '../components/MovieGrid'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 export default function BrowsePage() {
+  usePageTitle('Browse')
   const [searchParams, setSearchParams] = useSearchParams()
   const query = searchParams.get('q') || ''
   const mediaType = searchParams.get('type') || ''

@@ -7,8 +7,8 @@
 A full-stack Movie & TV Watchlist web application built for CSC 360. Users can search for movies and shows via the TMDB API, save titles to a personal watchlist, track watched items, write notes, and rate titles 1–10. A real-time activity feed (powered by SignalR) shows what the community is watching right now.
 
 **Deployed URLs:**
-- Frontend: *(to be added after Vercel deploy)*
-- Backend API: *(to be added after Render deploy)*
+- Frontend: https://cine-track-roan.vercel.app
+- Backend API: https://cinetrack-1544.onrender.com
 
 **Tech stack:** React + Vite + TypeScript + Tailwind CSS · .NET 10 ASP.NET Core Minimal APIs · Entity Framework Core · SQLite (dev) / PostgreSQL (prod) · Google OAuth 2.0 · SignalR
 
@@ -32,9 +32,9 @@ cd backend/CineTrack.Api
 dotnet user-secrets set "Google:ClientId" "YOUR_GOOGLE_CLIENT_ID"
 dotnet user-secrets set "Google:ClientSecret" "YOUR_GOOGLE_CLIENT_SECRET"
 dotnet user-secrets set "Tmdb:ApiKey" "YOUR_TMDB_API_KEY"
-dotnet user-secrets set "AdminKey" "any-local-secret"
+dotnet user-secrets set "Admin:SeedKey" "any-local-secret"
 
-# Run the API (SQLite database created automatically)
+# Run the API (SQLite database created automatically at http://localhost:5000)
 dotnet run
 ```
 
@@ -52,14 +52,17 @@ The frontend will be available at `http://localhost:5173`.
 
 ### Seed the Database
 
-With both the backend running and your `AdminKey` configured, call the seed endpoint:
+With both the backend running and your `Admin:SeedKey` configured, call the seed endpoint:
 
 ```bash
-curl -X POST http://localhost:5000/api/admin/seed \
-  -H "X-Admin-Key: any-local-secret"
+# PowerShell
+Invoke-RestMethod -Uri "http://localhost:5000/api/admin/seed" -Method POST -Headers @{"X-Admin-Key"="any-local-secret"}
+
+# curl
+curl -X POST http://localhost:5000/api/admin/seed -H "X-Admin-Key: any-local-secret"
 ```
 
-This fetches popular titles from TMDB and generates simulated users and interactions. The full seed takes approximately 30–60 seconds depending on TMDB API response time.
+The seeder fetches from 7 TMDB list endpoints (popular, top-rated, upcoming, now-playing, on-the-air across movie and TV), deduplicates results, and backfills to 5,000 domain records. It also creates 500 simulated users and 10,000 interaction records. **The full seed takes approximately 5–10 minutes** due to TMDB API rate limiting. Add `?force=true` to reseed after a previous run.
 
 ### Run Tests
 
@@ -86,9 +89,10 @@ npm run test:e2e
 | `Google__ClientId` | Backend | Google OAuth 2.0 Client ID |
 | `Google__ClientSecret` | Backend | Google OAuth 2.0 Client Secret |
 | `Tmdb__ApiKey` | Backend | TMDB API v3 key |
-| `AdminKey` | Backend | Secret header value for `/api/admin/seed` |
-| `ConnectionStrings__DefaultConnection` | Backend (prod) | PostgreSQL connection string |
-| `VITE_API_URL` | Frontend (prod) | Full URL of the deployed backend |
+| `Admin__SeedKey` | Backend | Secret header value for `POST /api/admin/seed` |
+| `ConnectionStrings__Postgres` | Backend (prod) | PostgreSQL connection string (postgres:// URI format accepted) |
+| `Frontend__BaseUrl` | Backend (prod) | Frontend origin for CORS (e.g. `https://cine-track-roan.vercel.app`) |
+| `VITE_API_URL` | Frontend (prod) | Full URL of the deployed backend API |
 
 In development, backend secrets are stored via `dotnet user-secrets`. In production (Render), they are set as environment variables in the Render dashboard.
 
@@ -102,29 +106,36 @@ To test with a second account for user isolation, open a second private/incognit
 
 ---
 
-## Database Migration & Reset
+## Database Reset
+
+The project uses `EnsureCreated` to initialize the schema on startup (development and production). To reset:
 
 ```bash
-# Apply EF Core migrations (development — SQLite)
+# Reset local SQLite database
 cd backend/CineTrack.Api
-dotnet ef database update
+Remove-Item cinetrack.db   # PowerShell
+# rm cinetrack.db          # bash/zsh
+dotnet run                 # EnsureCreated rebuilds the schema
 
-# Add a new migration after model changes
-dotnet ef migrations add MigrationName --project CineTrack.Api
+# Then reseed
+Invoke-RestMethod -Uri "http://localhost:5000/api/admin/seed?force=true" -Method POST -Headers @{"X-Admin-Key"="any-local-secret"}
+```
 
-# Reset the local database
-rm cinetrack.db
-dotnet run   # EnsureCreated rebuilds it
+For production (Render PostgreSQL), reseed via:
+```powershell
+Invoke-RestMethod -Uri "https://cinetrack-1544.onrender.com/api/admin/seed?force=true" -Method POST -Headers @{"X-Admin-Key"="YOUR_ADMIN_SEED_KEY"}
 ```
 
 ---
 
 ## Known Limitations
 
-- The database seeder uses TMDB's "popular" endpoint which returns at most ~500 unique titles (limited by TMDB's free-tier pagination). The remainder of the 5,000-record target is backfilled with generated data.
-- Google OAuth requires the redirect URI `http://localhost:5000/signin-google` to be added to the Google Cloud Console for local development.
-- The SignalR live feed requires the frontend and backend to run simultaneously; if the backend is restarted, the browser reconnects automatically within 5 seconds.
-- Playwright E2E tests that cover authenticated flows are marked `test.skip` because they require a live Google session and cannot run in automated CI.
+- The database seeder fetches from 7 TMDB endpoints (up to 25 pages each). Due to deduplication across list types, the total unique real TMDB titles is approximately 2,000–3,500; the remainder of the 5,000 target is backfilled with generated placeholder records.
+- Google OAuth requires exact redirect URIs registered in Google Cloud Console. For local dev: `http://localhost:5000/signin-google`. For production: `https://cinetrack-1544.onrender.com/signin-google`.
+- The SignalR live feed requires the frontend and backend to run simultaneously. If the backend restarts, the browser reconnects automatically within 5 seconds.
+- Authenticated Playwright E2E tests use a dev-only `POST /api/auth/test-login` bypass endpoint (returns 404 in production), so they are skipped automatically in CI when the backend is unavailable.
+- The project uses `EnsureCreated` instead of EF Core migrations in production. This creates the schema on first run but does not support incremental migrations. A future improvement would be to generate and apply migrations via `dotnet ef migrations add`.
+- Render's free tier spins down after 15 minutes of inactivity. The first request after a cold start may take 30–60 seconds.
 
 ---
 

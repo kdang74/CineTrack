@@ -7,6 +7,7 @@ import LoadingSpinner from '../components/LoadingSpinner'
 import EmptyState from '../components/EmptyState'
 import WatchlistButton from '../components/WatchlistButton'
 import { useAuth } from '../contexts/AuthContext'
+import { usePageTitle } from '../hooks/usePageTitle'
 
 export default function MovieDetailPage() {
   const { mediaType, tmdbId } = useParams<{ mediaType: string; tmdbId: string }>()
@@ -15,6 +16,7 @@ export default function MovieDetailPage() {
   const [watchlistItem, setWatchlistItem] = useState<WatchlistItem | undefined>()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
+  usePageTitle(movie?.title ?? movie?.name ?? 'Title')
 
   useEffect(() => {
     if (!tmdbId || !mediaType) return

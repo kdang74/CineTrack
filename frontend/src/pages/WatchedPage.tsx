@@ -7,8 +7,10 @@ import RatingStars from '../components/RatingStars'
 import WatchlistForm from '../components/WatchlistForm'
 import LoadingSpinner from '../components/LoadingSpinner'
 import EmptyState from '../components/EmptyState'
+import { usePageTitle } from '../hooks/usePageTitle'
 
 export default function WatchedPage() {
+  usePageTitle('Watched')
   const [items, setItems] = useState<WatchlistItem[]>([])
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState<number | null>(null)

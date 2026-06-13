@@ -67,7 +67,7 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          VITE_API_URL: https://cinetrack-api.onrender.com
+          VITE_API_URL: https://cinetrack-1544.onrender.com
 
       - name: Unit Tests (Vitest)
         run: npm test
@@ -104,12 +104,13 @@ jobs:
       - name: Build frontend for E2E
         run: npm run build
         env:
-          VITE_API_URL: http://localhost:5000
+          VITE_API_URL: https://cinetrack-1544.onrender.com
 
       - name: Run Playwright E2E tests
         run: npx playwright test --project=chromium
         env:
           CI: true
+          VITE_API_URL: https://cinetrack-1544.onrender.com
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
@@ -121,12 +122,15 @@ jobs:
 
   # ──────────────────────────────────────
   # Deploy Frontend to Vercel (main only)
+  # Vercel also auto-deploys via its GitHub integration.
+  # continue-on-error prevents missing secrets from failing the workflow.
   # ──────────────────────────────────────
   deploy-frontend:
     name: Deploy Frontend (Vercel)
     needs: [backend, frontend, e2e]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    continue-on-error: true
 
     steps:
       - uses: actions/checkout@v4
@@ -142,15 +146,22 @@ jobs:
 
   # ──────────────────────────────────────
   # Deploy Backend to Render (main only)
+  # Render also auto-deploys via its GitHub integration.
+  # continue-on-error prevents missing secrets from failing the workflow.
   # ──────────────────────────────────────
   deploy-backend:
     name: Deploy Backend (Render)
     needs: [backend, frontend, e2e]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    continue-on-error: true
 
     steps:
       - name: Trigger Render Deploy
         run: |
-          curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}" \
-            -H "Content-Type: application/json"
+          if [ -n "${{ secrets.RENDER_DEPLOY_HOOK_URL }}" ]; then
+            curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}" \
+              -H "Content-Type: application/json"
+          else
+            echo "RENDER_DEPLOY_HOOK_URL not configured — skipping (Render deploys via GitHub integration)"
+          fi

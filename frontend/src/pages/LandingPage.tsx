@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { usePageTitle } from '../hooks/usePageTitle'
 import { api, tmdbPoster } from '../lib/api'
 import type { Stats } from '../types'
 import { Film, Star, Users, Eye, ArrowRight, Zap } from 'lucide-react'
 
 export default function LandingPage() {
+  usePageTitle('Home')
   const { user, login } = useAuth()
   const [stats, setStats] = useState<Stats | null>(null)
   const [loading, setLoading] = useState(true)

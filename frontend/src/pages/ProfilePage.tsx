@@ -4,8 +4,10 @@ import { api } from '../lib/api'
 import type { WatchlistItem } from '../types'
 import { Star, Film, Tv, Eye, Calendar } from 'lucide-react'
 import LoadingSpinner from '../components/LoadingSpinner'
+import { usePageTitle } from '../hooks/usePageTitle'
 
 export default function ProfilePage() {
+  usePageTitle('Profile')
   const { user } = useAuth()
   const [items, setItems] = useState<WatchlistItem[]>([])
   const [loading, setLoading] = useState(true)

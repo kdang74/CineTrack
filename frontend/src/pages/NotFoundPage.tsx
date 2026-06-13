@@ -1,7 +1,9 @@
 import { Link } from 'react-router-dom'
 import { Film } from 'lucide-react'
+import { usePageTitle } from '../hooks/usePageTitle'
 
 export default function NotFoundPage() {
+  usePageTitle('Page Not Found')
   return (
     <main className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center" aria-labelledby="not-found-heading">
       <Film size={48} className="text-gray-700 mb-4" aria-hidden="true" />
