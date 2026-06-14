@@ -19,7 +19,7 @@ AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 // ASP.NET Core sees the request as HTTPS and generates correct redirect URIs for Google OAuth.
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
-    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost;
     // Allow any proxy — Render's IP range is not fixed
     options.KnownNetworks.Clear();
     options.KnownProxies.Clear();
